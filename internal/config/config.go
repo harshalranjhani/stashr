@@ -84,7 +84,7 @@ type RetentionConfig struct {
 
 const (
 	// DefaultConfigDir is the default directory for configuration files
-	DefaultConfigDir = ".credstash"
+	DefaultConfigDir = ".stashr"
 	// DefaultConfigFile is the default configuration file name
 	DefaultConfigFile = "config.yaml"
 )
@@ -116,14 +116,14 @@ func Load() (*Config, error) {
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("configuration file not found at %s. Run 'credstash init' to create one", configPath)
+		return nil, fmt.Errorf("configuration file not found at %s. Run 'stashr init' to create one", configPath)
 	}
 
 	viper.SetConfigFile(configPath)
 	viper.SetConfigType("yaml")
 
-	// Read environment variables with PWBACKUP_ prefix
-	viper.SetEnvPrefix("PWBACKUP")
+	// Read environment variables with stashr_ prefix
+	viper.SetEnvPrefix("stashr")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -222,16 +222,16 @@ func GetDefault() *Config {
 			GoogleDrive: GoogleDriveConfig{
 				Enabled:         false,
 				FolderID:        "",
-				CredentialsPath: "~/.credstash/gdrive-credentials.json",
+				CredentialsPath: "~/.stashr/gdrive-credentials.json",
 			},
 			USB: USBConfig{
 				Enabled:   false,
 				MountPath: "/media/backup",
-				BackupDir: "credstash",
+				BackupDir: "stashr",
 			},
 			Local: LocalConfig{
 				Enabled:    false,
-				BackupPath: "~/.credstash/backups",
+				BackupPath: "~/.stashr/backups",
 			},
 		},
 		Backup: BackupConfig{

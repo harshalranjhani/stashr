@@ -30,30 +30,44 @@ A production-ready CLI tool for securely backing up password manager vaults to m
 
 ### Prerequisites
 
-- Go 1.21 or later
 - Password manager CLI tools:
   - [Bitwarden CLI](https://bitwarden.com/help/cli/) (if using Bitwarden)
   - [1Password CLI](https://developer.1password.com/docs/cli/) (if using 1Password)
 - Google Drive API credentials (if using Google Drive storage)
 
+### Homebrew (macOS/Linux) - Recommended
+
+```bash
+# Add the tap
+brew tap harshalranjhani/harshalranjhani
+
+# Install stashr
+brew install stashr
+
+# Verify installation
+stashr --version
+```
+
 ### From Source
+
+**Prerequisites**: Go 1.21 or later
 
 ```bash
 # Clone the repository
-git clone https://github.com/harshalranjhani/credstash.git
-cd credstash
+git clone https://github.com/harshalranjhani/stashr.git
+cd stashr
 
 # Build the binary
-go build -o credstash
+go build -o stashr
 
 # Install to your PATH (optional)
-sudo mv credstash /usr/local/bin/
+sudo mv stashr /usr/local/bin/
 ```
 
 ### Using Go Install
 
 ```bash
-go install github.com/harshalranjhani/credstash@latest
+go install github.com/harshalranjhani/stashr@latest
 ```
 
 ## Quick Start
@@ -63,13 +77,13 @@ go install github.com/harshalranjhani/credstash@latest
 Run the interactive setup wizard:
 
 ```bash
-credstash init
+stashr init
 ```
 
 This will:
 - Detect installed password manager CLIs
 - Guide you through storage backend setup
-- Create a configuration file at `~/.credstash/config.yaml`
+- Create a configuration file at `~/.stashr/config.yaml`
 - Set up encryption preferences
 
 ### 2. Configure Your Password Manager
@@ -104,12 +118,12 @@ op whoami
 3. Enable the Google Drive API
 4. Create OAuth 2.0 credentials (Desktop application)
 5. Download the credentials JSON file
-6. Save it to `~/.credstash/gdrive-credentials.json`
+6. Save it to `~/.stashr/gdrive-credentials.json`
 
 ### 4. Run Your First Backup
 
 ```bash
-credstash backup
+stashr backup
 ```
 
 You'll be prompted for an encryption password. This password will be used to encrypt your backups.
@@ -118,7 +132,7 @@ You'll be prompted for an encryption password. This password will be used to enc
 
 ### Configuration File
 
-The configuration file is located at `~/.credstash/config.yaml`. Here's an example:
+The configuration file is located at `~/.stashr/config.yaml`. Here's an example:
 
 ```yaml
 password_managers:
@@ -135,14 +149,14 @@ storage:
   google_drive:
     enabled: true
     folder_id: ""
-    credentials_path: "~/.credstash/gdrive-credentials.json"
+    credentials_path: "~/.stashr/gdrive-credentials.json"
   usb:
     enabled: true
     mount_path: "/media/backup"
-    backup_dir: "credstash"
+    backup_dir: "stashr"
   local:
     enabled: true
-    backup_path: "~/.credstash/backups"  # Local fallback storage
+    backup_path: "~/.stashr/backups"  # Local fallback storage
 
 backup:
   encryption:
@@ -156,47 +170,47 @@ backup:
 
 ### Environment Variables
 
-You can override configuration values using environment variables with the `PWBACKUP_` prefix:
+You can override configuration values using environment variables with the `stashr_` prefix:
 
 ```bash
-export PWBACKUP_BACKUP_ENCRYPTION_ENABLED=true
-export PWBACKUP_BACKUP_RETENTION_KEEPLAST=5
+export stashr_BACKUP_ENCRYPTION_ENABLED=true
+export stashr_BACKUP_RETENTION_KEEPLAST=5
 ```
 
 ## Usage
 
 ### Commands
 
-#### `credstash init`
+#### `stashr init`
 
 Initialize configuration with an interactive setup wizard.
 
 ```bash
-credstash init
+stashr init
 ```
 
-#### `credstash backup`
+#### `stashr backup`
 
 Backup password manager vaults.
 
 ```bash
 # Backup all configured managers to all destinations
-credstash backup
+stashr backup
 
 # Backup specific manager
-credstash backup --manager bitwarden
+stashr backup --manager bitwarden
 
 # Backup to specific destination
-credstash backup --destination gdrive
+stashr backup --destination gdrive
 
 # FULL EXPORT with passwords (1Password only, SLOW but complete)
-credstash backup --full-export
+stashr backup --full-export
 
 # Backup without encryption (not recommended)
-credstash backup --no-encrypt
+stashr backup --no-encrypt
 
 # Verbose output
-credstash backup --verbose
+stashr backup --verbose
 ```
 
 **Options:**
@@ -216,46 +230,46 @@ credstash backup --verbose
 - **Default**: Asks for password once, uses same password for all managers
 - **`--prompt-each`**: Asks for password for each manager separately (recommended for maximum security)
 
-#### `credstash list`
+#### `stashr list`
 
 List all backups from storage destinations.
 
 ```bash
 # List all backups
-credstash list
+stashr list
 
 # List from specific destination
-credstash list --destination gdrive
+stashr list --destination gdrive
 ```
 
 **Options:**
 - `-d, --destination`: Destination to list from (gdrive, usb, local, all)
 
-#### `credstash config`
+#### `stashr config`
 
 Manage configuration.
 
 ```bash
 # Show current configuration
-credstash config show
+stashr config show
 
 # Validate configuration and test connections
-credstash config validate
+stashr config validate
 ```
 
-#### `credstash restore`
+#### `stashr restore`
 
 Restore and decrypt backups for manual import.
 
 ```bash
 # Restore a backup (auto-search all locations)
-credstash restore --file backup_bitwarden_20251004_143022.json.enc
+stashr restore --file backup_bitwarden_20251004_143022.json.enc
 
 # Restore from specific location
-credstash restore --file backup_1password_20251004_143022.json.enc --source local
+stashr restore --file backup_1password_20251004_143022.json.enc --source local
 
 # Specify output location
-credstash restore --file backup_bitwarden_20251004_143022.json.enc --output ~/Downloads/vault.json
+stashr restore --file backup_bitwarden_20251004_143022.json.enc --output ~/Downloads/vault.json
 ```
 
 **Options:**
@@ -288,22 +302,22 @@ For **1Password**:
 
 ```bash
 # 1. Initialize
-credstash init
+stashr init
 
 # 2. Validate setup
-credstash config validate
+stashr config validate
 
 # 3. Create backup
-credstash backup
+stashr backup
 
 # 4. List backups
-credstash list
+stashr list
 
 # 5. Backup specific manager to specific destination
-credstash backup --manager bitwarden --destination usb
+stashr backup --manager bitwarden --destination usb
 
 # 6. Restore a backup when needed
-credstash restore --file backup_bitwarden_20251004_143022.json.enc
+stashr restore --file backup_bitwarden_20251004_143022.json.enc
 ```
 
 ## Security Considerations
@@ -327,7 +341,7 @@ credstash restore --file backup_bitwarden_20251004_143022.json.enc
    - ✅ Same password for all backups
    - ⚠️ Password stays in process memory longer
    ```bash
-   credstash backup  # Asks once
+   stashr backup  # Asks once
    ```
 
 2. **`--prompt-each` (Maximum Security)**: Password asked for each manager
@@ -336,7 +350,7 @@ credstash restore --file backup_bitwarden_20251004_143022.json.enc
    - ✅ Better protection against memory dumps
    - ⚠️ More typing required
    ```bash
-   credstash backup --prompt-each  # Asks for each manager
+   stashr backup --prompt-each  # Asks for each manager
    ```
 
 **Recommendation**: Use `--prompt-each` for maximum security, especially on shared systems or when paranoid about memory attacks.
@@ -353,7 +367,7 @@ credstash restore --file backup_bitwarden_20251004_143022.json.enc
 - **Always Available**: Works even when cloud/USB is unavailable
 - **Fast**: No network latency or USB connection required
 - **Secure**: Files stored with restrictive permissions (0600)
-- **Default Location**: `~/.credstash/backups`
+- **Default Location**: `~/.stashr/backups`
 - **Use Case**: Reliable fallback when other storage is unavailable
 
 #### Google Drive
@@ -397,7 +411,7 @@ credstash restore --file backup_bitwarden_20251004_143022.json.enc
 
 #### "Configuration file not found"
 
-Run `credstash init` to create a configuration file.
+Run `stashr init` to create a configuration file.
 
 #### "Bitwarden CLI not found"
 
@@ -441,8 +455,8 @@ op signin
 #### "Google Drive: credentials file not found"
 
 1. Download OAuth2 credentials from Google Cloud Console
-2. Save to `~/.credstash/gdrive-credentials.json`
-3. Run `credstash backup` and complete OAuth2 flow
+2. Save to `~/.stashr/gdrive-credentials.json`
+3. Run `stashr backup` and complete OAuth2 flow
 
 #### "USB drive not available"
 
@@ -464,14 +478,14 @@ This usually means:
 Run with verbose flag for detailed output:
 
 ```bash
-credstash backup --verbose
+stashr backup --verbose
 ```
 
 ### Getting Help
 
 If you encounter issues:
 
-1. Run `credstash config validate` to check your setup
+1. Run `stashr config validate` to check your setup
 2. Check logs for error messages
 3. Verify password manager CLI is working directly
 4. Test storage backends individually
@@ -481,7 +495,7 @@ If you encounter issues:
 ### Project Structure
 
 ```
-credstash/
+stashr/
 ├── cmd/                      # CLI commands
 │   ├── root.go              # Root command
 │   ├── init.go              # Initialize configuration
@@ -572,7 +586,7 @@ MIT License - see LICENSE file for details
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/harshalranjhani/credstash/issues)
+- **Issues**: [GitHub Issues](https://github.com/harshalranjhani/stashr/issues)
 - **Documentation**: This README and inline code documentation
 - **Security Issues**: Please report security issues privately to the maintainer
 

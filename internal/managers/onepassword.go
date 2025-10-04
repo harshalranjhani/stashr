@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 // OnePassword represents the 1Password password manager

@@ -8,16 +8,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/harshalranjhani/credstash/internal/config"
-	"github.com/harshalranjhani/credstash/internal/logger"
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/internal/config"
+	"github.com/harshalranjhani/stashr/internal/logger"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize configuration",
-	Long: `Initialize credstash configuration by creating a config file
+	Long: `Initialize stashr configuration by creating a config file
 and setting up necessary credentials.
 
 This interactive wizard will guide you through:
@@ -131,11 +131,11 @@ func runInit(cmd *cobra.Command, args []string) {
 			cfg.Storage.USB.MountPath = mountPath
 		}
 
-		backupDir := promptInput(reader, "Backup directory name (default: credstash)")
+		backupDir := promptInput(reader, "Backup directory name (default: stashr)")
 		if backupDir != "" {
 			cfg.Storage.USB.BackupDir = backupDir
 		} else {
-			cfg.Storage.USB.BackupDir = "credstash"
+			cfg.Storage.USB.BackupDir = "stashr"
 		}
 	}
 
@@ -145,7 +145,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	if promptYesNo(reader, "Enable local storage? (recommended as fallback)") {
 		cfg.Storage.Local.Enabled = true
 
-		defaultPath := "~/.credstash/backups"
+		defaultPath := "~/.stashr/backups"
 		backupPath := promptInput(reader, fmt.Sprintf("Local backup path (default: %s)", defaultPath))
 		if backupPath != "" {
 			cfg.Storage.Local.BackupPath = backupPath
@@ -200,7 +200,7 @@ func runInit(cmd *cobra.Command, args []string) {
 	logger.Info("Next steps:")
 	logger.Info("  1. Ensure your password manager CLI is authenticated")
 	logger.Info("  2. If using Google Drive, run a test backup to complete OAuth2 flow")
-	logger.Info("  3. Run 'credstash backup' to create your first backup")
+	logger.Info("  3. Run 'stashr backup' to create your first backup")
 	logger.Separator()
 }
 

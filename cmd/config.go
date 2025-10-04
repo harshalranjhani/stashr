@@ -6,17 +6,17 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/harshalranjhani/credstash/internal/config"
-	"github.com/harshalranjhani/credstash/internal/logger"
-	"github.com/harshalranjhani/credstash/internal/managers"
-	"github.com/harshalranjhani/credstash/internal/storage"
+	"github.com/harshalranjhani/stashr/internal/config"
+	"github.com/harshalranjhani/stashr/internal/logger"
+	"github.com/harshalranjhani/stashr/internal/managers"
+	"github.com/harshalranjhani/stashr/internal/storage"
 )
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Manage configuration",
-	Long: `Manage credstash configuration.
+	Long: `Manage stashr configuration.
 
 Subcommands:
   show     - Display current configuration

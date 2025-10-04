@@ -104,7 +104,7 @@ done
 Then you can use our tool to encrypt it:
 ```bash
 # Encrypt the 1Password export
-./credstash backup --no-encrypt  # Just to test
+./stashr backup --no-encrypt  # Just to test
 # Or manually encrypt with:
 openssl enc -aes-256-cbc -salt -in export.csv -out export.csv.enc
 ```
@@ -141,7 +141,7 @@ openssl enc -aes-256-cbc -salt -in export.csv -out export.csv.enc
 **3. Combination approach:**
 ```bash
 # Weekly: Metadata backup with our tool (safe)
-./credstash backup
+./stashr backup
 
 # Quarterly: Full export with 1Password app (risky but complete)
 # 1. Export from 1Password app → full_export.csv
@@ -168,8 +168,8 @@ op item get item-id --format=json
 
 We could add a `--full-export` flag:
 ```bash
-./credstash backup --full-export  # Slow, gets passwords
-./credstash backup                # Fast, metadata only (current)
+./stashr backup --full-export  # Slow, gets passwords
+./stashr backup                # Fast, metadata only (current)
 ```
 
 **Would you like me to implement this?** It would be slower but include passwords.

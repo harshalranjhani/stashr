@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 // USB represents a USB drive storage backend

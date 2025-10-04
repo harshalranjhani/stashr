@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/harshalranjhani/credstash/internal/config"
-	"github.com/harshalranjhani/credstash/internal/logger"
-	"github.com/harshalranjhani/credstash/internal/storage"
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/internal/config"
+	"github.com/harshalranjhani/stashr/internal/logger"
+	"github.com/harshalranjhani/stashr/internal/storage"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 var listDestination string

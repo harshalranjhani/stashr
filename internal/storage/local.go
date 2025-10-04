@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 // Local represents a local storage backend

@@ -5,7 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/harshalranjhani/credstash/internal/logger"
+	"github.com/harshalranjhani/stashr/internal/logger"
+	"github.com/harshalranjhani/stashr/internal/version"
 )
 
 var (
@@ -15,13 +16,13 @@ var (
 
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
-	Use:   "credstash",
+	Use:   "stashr",
 	Short: "Password Manager Backup Tool",
 	Long: `🔐 Password Manager Backup Tool
 
 A secure CLI tool for backing up password manager vaults to multiple destinations.
 Supports Bitwarden, 1Password, Google Drive, USB, and local storage.`,
-	Version: "1.0.0",
+	Version: version.GetFullVersion(),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		// Set verbose mode
 		if verbose {
@@ -43,7 +44,7 @@ func init() {
 
 	// Global flags
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.credstash/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.stashr/config.yaml)")
 }
 
 func initConfig() {

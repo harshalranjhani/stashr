@@ -16,7 +16,7 @@ import (
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 
-	"github.com/harshalranjhani/credstash/pkg/utils"
+	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
 // GoogleDrive represents a Google Drive storage backend

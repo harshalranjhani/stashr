@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/harshalranjhani/credstash/cmd"
+	"github.com/harshalranjhani/stashr/cmd"
 )
 
 func main() {

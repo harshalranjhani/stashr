@@ -27,7 +27,7 @@ If you've forgotten your password, your encrypted backups are **lost forever**. 
 ### Option 1: Start Fresh (Recommended)
 ```bash
 # Create NEW backups with a NEW password you'll remember
-./credstash backup
+./stashr backup
 
 # This time:
 # 1. Write down the password in a password manager
@@ -38,7 +38,7 @@ If you've forgotten your password, your encrypted backups are **lost forever**. 
 ### Option 2: Create Unencrypted Backups (NOT Recommended)
 ```bash
 # Only do this temporarily for testing
-./credstash backup --no-encrypt
+./stashr backup --no-encrypt
 
 # ⚠️ WARNING: These backups are NOT secure!
 # ⚠️ Anyone can read your passwords!
@@ -60,8 +60,8 @@ Use: `correct-horse-battery-staple-2024`
 ### 3. Test Your Password
 ```bash
 # After backing up, immediately test restore
-./credstash list
-./credstash restore --file backup_bitwarden_XXXXX.json.enc
+./stashr list
+./stashr restore --file backup_bitwarden_XXXXX.json.enc
 
 # If you can restore = password is correct
 # Delete the restored .json file afterward!
@@ -82,11 +82,11 @@ Your old encrypted backups are gone. This is unfortunate but cannot be undone.
 ### Step 2: Create New Backups
 ```bash
 # Delete old encrypted backups (they're useless now)
-./credstash list
+./stashr list
 # Note which ones you can't decrypt
 
 # Create fresh backups with a NEW password
-./credstash backup
+./stashr backup
 # When prompted, use a MEMORABLE password
 # Write it down in your password manager RIGHT NOW
 ```
@@ -94,7 +94,7 @@ Your old encrypted backups are gone. This is unfortunate but cannot be undone.
 ### Step 3: Verify Immediately
 ```bash
 # Test that you can restore
-./credstash restore --file [your-new-backup].enc
+./stashr restore --file [your-new-backup].enc
 # Enter the password you JUST used
 # If it works, you're good!
 # Delete the decrypted file
@@ -104,7 +104,7 @@ Your old encrypted backups are gone. This is unfortunate but cannot be undone.
 Add this entry to your password manager:
 
 ```
-Service: PWBackup Encryption
+Service: stashr Encryption
 Username: (not applicable)
 Password: [your-memorable-passphrase]
 Notes: This password encrypts all my password manager backups.

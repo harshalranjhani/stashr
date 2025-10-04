@@ -1,4 +1,4 @@
-module github.com/harshalranjhani/credstash
+module github.com/harshalranjhani/stashr
 
 go 1.24.0
 

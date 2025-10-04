@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-credstash
+stashr
 
 # Test binary, built with `go test -c`
 *.test
@@ -30,7 +30,7 @@ go.work
 Thumbs.db
 
 # Configuration and credentials
-.credstash/
+.stashr/
 gdrive-credentials.json
 gdrive-token.json
 *.key
