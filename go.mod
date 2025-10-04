@@ -10,6 +10,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	golang.org/x/crypto v0.42.0
 	golang.org/x/oauth2 v0.31.0
+	golang.org/x/term v0.35.0
 	google.golang.org/api v0.251.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -45,7 +46,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
-	golang.org/x/term v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250929231259-57b25ae835d4 // indirect
 	google.golang.org/grpc v1.75.1 // indirect

@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -17,14 +19,21 @@ builds:
       - -s -w -X github.com/harshalranjhani/stashr/internal/version.Version={{.Version}} -X github.com/harshalranjhani/stashr/internal/version.GitCommit={{.Commit}} -X github.com/harshalranjhani/stashr/internal/version.BuildDate={{.Date}}
 
 archives:
-  - format: tar.gz
-    name_template: >-
+  - name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
-    # use zip for windows archives
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+    builds_info:
+      group: root
+      owner: root
+    rlcp: true
+    format: tar.gz
     format_overrides:
       - goos: windows
         format: zip
@@ -35,6 +44,8 @@ changelog:
         exclude:
             - '^docs:'
             - '^test:'
+            - '^chore:'
+            - '^ci:'
             - 'README'
             - Merge pull request
             - Merge branch
@@ -46,8 +57,7 @@ universal_binaries:
   - replace: true
 
 brews:
-  -
-    name: stashr
+  - name: stashr
     homepage: "https://stashr.harshalranjhani.in"
     repository:
       owner: harshalranjhani
