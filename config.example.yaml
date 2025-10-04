@@ -1,0 +1,34 @@
+# Password Manager Backup Tool - Example Configuration
+# Copy this file to ~/.credstash/config.yaml and customize it for your setup
+
+password_managers:
+  bitwarden:
+    enabled: true
+    cli_path: "/usr/local/bin/bw"
+    email: "user@example.com"
+  onepassword:
+    enabled: false
+    cli_path: "/usr/local/bin/op"
+    account: "my.1password.com"
+
+storage:
+  google_drive:
+    enabled: true
+    folder_id: ""  # Leave empty to use root directory or specify a folder ID
+    credentials_path: "~/.credstash/gdrive-credentials.json"
+  usb:
+    enabled: true
+    mount_path: "/media/backup"  # macOS: /Volumes/BackupDrive, Windows: E:\
+    backup_dir: "credstash"
+  local:
+    enabled: true
+    backup_path: "~/.credstash/backups"  # Local fallback storage
+
+backup:
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+  compression: true
+  retention:
+    keep_last: 10
+  filename_format: "backup_%s_%s.json.enc"  # Format: backup_<manager>_<timestamp>.json.enc

@@ -1,0 +1,49 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+credstash
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Configuration and credentials
+.credstash/
+gdrive-credentials.json
+gdrive-token.json
+*.key
+*.pem
+
+# Backup files
+*.enc
+*.backup
+backups/
+
+# Temporary files
+*.tmp
+temp/
+
+# Log files
+*.log
