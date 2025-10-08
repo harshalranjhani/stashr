@@ -18,7 +18,14 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "stashr",
 	Short: "Password Manager Backup Tool",
-	Long: `🔐 Password Manager Backup Tool
+	Long: `
+     _            _         
+ ___| |_ __ _ ___| |__  _ _ 
+/ __| __/ _' / __| '_ \| '_|
+\__ \ || (_| \__ \ | | | |  
+|___/\__\__,_|___/_| |_|_|  
+
+🔐 Password Manager Backup Tool
 
 A secure CLI tool for backing up password manager vaults to multiple destinations.
 Supports Bitwarden, 1Password, Google Drive, USB, and local storage.`,
