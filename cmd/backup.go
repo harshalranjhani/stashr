@@ -22,12 +22,15 @@ var (
 	noEncrypt        bool
 	promptEachBackup bool
 	fullExport       bool
+	interactiveMode  bool
+	dryRun           bool
 )
 
 // backupCmd represents the backup command
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup password manager vaults",
+	
 	Long: `Backup password manager vaults to configured storage destinations.
 
 This command will:
@@ -48,6 +51,8 @@ func init() {
 	backupCmd.Flags().BoolVar(&noEncrypt, "no-encrypt", false, "Skip encryption (not recommended)")
 	backupCmd.Flags().BoolVar(&promptEachBackup, "prompt-each", false, "Prompt for password for each manager (more secure)")
 	backupCmd.Flags().BoolVar(&fullExport, "full-export", false, "Export full item details including passwords (slower, 1Password only)")
+	backupCmd.Flags().BoolVarP(&interactiveMode, "interactive", "i", false, "Interactive mode with guided prompts")
+	backupCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview backup operation without executing")
 }
 
 func runBackup(cmd *cobra.Command, args []string) {
@@ -58,6 +63,14 @@ func runBackup(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.PrintError(err)
 		return
+	}
+
+	// Interactive mode - ask user questions before proceeding
+	if interactiveMode {
+		if !handleInteractiveMode(cfg) {
+			logger.Info("Backup cancelled")
+			return
+		}
 	}
 
 	// Determine which managers to backup
@@ -71,6 +84,12 @@ func runBackup(cmd *cobra.Command, args []string) {
 	storageBackends := getStorageBackends(cfg)
 	if len(storageBackends) == 0 {
 		logger.Failure("No storage backends enabled or selected")
+		return
+	}
+
+	// Dry-run mode - preview what will happen
+	if dryRun {
+		handleDryRun(managersToBackup, storageBackends, cfg)
 		return
 	}
 
@@ -200,6 +219,26 @@ func backupManager(mgr managers.Manager, storageBackends []storage.Storage, cfg 
 		}
 	} else {
 		logger.Progress("Exporting vault data...")
+
+		// Warning for 1Password users about metadata-only export
+		if _, ok := mgr.(*managers.OnePassword); ok {
+			logger.Separator()
+			logger.Warning("⚠️  1PASSWORD BACKUP MODE: Metadata Only (Fast)")
+			logger.Info("")
+			logger.Info("This backup will include:")
+			logger.Info("  ✓ Item titles, usernames, URLs")
+			logger.Info("  ✓ Categories and tags")
+			logger.Info("  ✗ Actual passwords (NOT included)")
+			logger.Info("")
+			logger.Info("For a complete backup with passwords, use: --full-export")
+			logger.Info("Note: Full export is slower but includes all sensitive data")
+			logger.Separator()
+
+			if !utils.ConfirmPrompt("Continue with metadata-only backup?") {
+				return fmt.Errorf("backup cancelled by user")
+			}
+		}
+
 		if err := mgr.Export(tmpFile.Name()); err != nil {
 			return fmt.Errorf("export failed: %w", err)
 		}
@@ -368,4 +407,233 @@ func getStorageBackends(cfg *config.Config) []storage.Storage {
 	}
 
 	return backends
+}
+
+// handleInteractiveMode guides the user through backup options
+func handleInteractiveMode(cfg *config.Config) bool {
+	logger.Info("📋 Interactive Backup Setup")
+	logger.Separator()
+
+	// Ask which managers to backup
+	logger.Info("Which password managers would you like to backup?")
+	if cfg.PasswordManagers.Bitwarden.Enabled && cfg.PasswordManagers.OnePassword.Enabled {
+		logger.Info("  1. Bitwarden only")
+		logger.Info("  2. 1Password only")
+		logger.Info("  3. Both (all)")
+		choice := utils.PromptForInput("Enter choice (1-3)")
+		switch choice {
+		case "1":
+			managerFlag = "bitwarden"
+		case "2":
+			managerFlag = "1password"
+		case "3":
+			managerFlag = "all"
+		default:
+			logger.Warning("Invalid choice, using default (all)")
+			managerFlag = "all"
+		}
+	} else if cfg.PasswordManagers.Bitwarden.Enabled {
+		managerFlag = "bitwarden"
+		logger.Info("  Using: Bitwarden (only enabled manager)")
+	} else if cfg.PasswordManagers.OnePassword.Enabled {
+		managerFlag = "1password"
+		logger.Info("  Using: 1Password (only enabled manager)")
+	}
+
+	logger.Separator()
+
+	// For 1Password, ask about full export
+	if managerFlag == "1password" || managerFlag == "all" {
+		if cfg.PasswordManagers.OnePassword.Enabled {
+			logger.Info("1Password Export Mode:")
+			logger.Info("  1. Metadata only (fast, ~1-2 seconds)")
+			logger.Info("     - Item titles, usernames, URLs")
+			logger.Info("     - ⚠️  NO passwords included")
+			logger.Info("  2. Full export (slow, ~5-10 minutes)")
+			logger.Info("     - Everything including passwords")
+			logger.Info("     - Complete backup")
+			choice := utils.PromptForInput("Enter choice (1-2)")
+			if choice == "2" {
+				fullExport = true
+				logger.Success("✓ Will perform full export with passwords")
+			} else {
+				logger.Success("✓ Will perform metadata-only export")
+			}
+			logger.Separator()
+		}
+	}
+
+	// Ask which storage to use
+	enabledBackends := []string{}
+	if cfg.Storage.Local.Enabled {
+		enabledBackends = append(enabledBackends, "local")
+	}
+	if cfg.Storage.USB.Enabled {
+		enabledBackends = append(enabledBackends, "usb")
+	}
+	if cfg.Storage.GoogleDrive.Enabled {
+		enabledBackends = append(enabledBackends, "gdrive")
+	}
+
+	if len(enabledBackends) > 1 {
+		logger.Info("Which storage destinations would you like to use?")
+		for i, backend := range enabledBackends {
+			logger.Info("  %d. %s", i+1, backend)
+		}
+		logger.Info("  %d. All enabled destinations", len(enabledBackends)+1)
+		choice := utils.PromptForInput(fmt.Sprintf("Enter choice (1-%d)", len(enabledBackends)+1))
+		if idx := parseChoice(choice, len(enabledBackends)+1); idx > 0 {
+			if idx <= len(enabledBackends) {
+				destinationFlag = enabledBackends[idx-1]
+			} else {
+				destinationFlag = "all"
+			}
+		} else {
+			destinationFlag = "all"
+		}
+	}
+
+	logger.Separator()
+
+	// Ask about encryption
+	if cfg.Backup.Encryption.Enabled {
+		if utils.ConfirmPrompt("Use separate password for each manager? (more secure)") {
+			promptEachBackup = true
+		}
+	}
+
+	logger.Separator()
+
+	// Show summary
+	logger.Info("📝 Backup Summary:")
+	logger.Info("  Managers: %s", managerFlag)
+	logger.Info("  Storage: %s", destinationFlag)
+	logger.Info("  Encryption: %v", cfg.Backup.Encryption.Enabled && !noEncrypt)
+	logger.Info("  Compression: %v", cfg.Backup.Compression)
+	if managerFlag == "1password" || managerFlag == "all" {
+		logger.Info("  1Password mode: %s", map[bool]string{true: "Full export (with passwords)", false: "Metadata only"}[fullExport])
+	}
+	logger.Separator()
+
+	return utils.ConfirmPrompt("Proceed with backup?")
+}
+
+// handleDryRun shows what would be backed up without executing
+func handleDryRun(managersToBackup []managers.Manager, storageBackends []storage.Storage, cfg *config.Config) {
+	logger.Info("🔍 DRY RUN MODE - Preview Only (no backup will be created)")
+	logger.Separator()
+
+	// Check managers
+	logger.Info("Password Managers to Backup:")
+	for _, mgr := range managersToBackup {
+		logger.Progress("Checking %s...", mgr.Name())
+
+		if !mgr.IsInstalled() {
+			logger.Failure("  ✗ CLI not installed at: %s", mgr.Name())
+			continue
+		}
+		logger.Success("  ✓ CLI found")
+
+		authenticated, err := mgr.IsAuthenticated()
+		if err != nil || !authenticated {
+			logger.Failure("  ✗ Not authenticated")
+			if mgr.Name() == "bitwarden" {
+				logger.Info("    Run: bw unlock")
+			} else if mgr.Name() == "1password" {
+				logger.Info("    Run: op signin")
+			}
+			continue
+		}
+		logger.Success("  ✓ Authenticated")
+
+		itemCount, _ := mgr.GetItemCount()
+		if itemCount > 0 {
+			logger.Info("  📊 Items: %d", itemCount)
+		}
+
+		// Estimate size (rough estimate: 1KB per item)
+		estimatedSize := int64(itemCount * 1024)
+		if cfg.Backup.Compression {
+			estimatedSize = estimatedSize * 3 / 10 // Assume 70% compression
+		}
+		logger.Info("  📦 Estimated size: %s", utils.FormatBytes(estimatedSize))
+
+		// Show export mode for 1Password
+		if mgr.Name() == "1password" {
+			if fullExport {
+				logger.Info("  🔐 Export mode: Full (with passwords)")
+				logger.Info("  ⏱️  Estimated time: %d-%d minutes", itemCount/20, itemCount/10)
+			} else {
+				logger.Warning("  ⚠️  Export mode: Metadata only (NO passwords)")
+				logger.Info("  ⏱️  Estimated time: <5 seconds")
+			}
+		}
+	}
+
+	logger.Separator()
+
+	// Check storage backends
+	logger.Info("Storage Destinations:")
+	for _, backend := range storageBackends {
+		logger.Progress("Checking %s...", backend.Name())
+
+		available, err := backend.IsAvailable()
+		if err != nil {
+			logger.Failure("  ✗ Error: %v", err)
+			continue
+		}
+		if !available {
+			logger.Failure("  ✗ Not available")
+			continue
+		}
+		logger.Success("  ✓ Available")
+
+		// List existing backups
+		backups, err := backend.List()
+		if err != nil {
+			logger.Warning("  ⚠ Could not list existing backups: %v", err)
+		} else {
+			logger.Info("  📁 Existing backups: %d", len(backups))
+			if len(backups) > 0 {
+				logger.Info("  🗑️  Old backups to delete: %d (keeping last %d)",
+					max(0, len(backups)+len(managersToBackup)-cfg.Backup.Retention.KeepLast),
+					cfg.Backup.Retention.KeepLast)
+			}
+		}
+	}
+
+	logger.Separator()
+
+	// Show encryption info
+	if !noEncrypt && cfg.Backup.Encryption.Enabled {
+		logger.Info("Encryption Settings:")
+		logger.Info("  Algorithm: %s", cfg.Backup.Encryption.Algorithm)
+		logger.Info("  Password prompt: %s", map[bool]string{true: "Once per manager", false: "Once for all"}[promptEachBackup])
+		logger.Separator()
+	}
+
+	// Show summary
+	logger.Success("✅ Dry run complete!")
+	logger.Info("")
+	logger.Info("To perform the actual backup, run the same command without --dry-run")
+}
+
+// parseChoice converts user input to an integer choice
+func parseChoice(input string, maxChoice int) int {
+	var choice int
+	if _, err := fmt.Sscanf(input, "%d", &choice); err != nil {
+		return 0
+	}
+	if choice < 1 || choice > maxChoice {
+		return 0
+	}
+	return choice
+}
+
+// max returns the maximum of two integers
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
