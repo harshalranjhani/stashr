@@ -5,10 +5,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 
 	"github.com/harshalranjhani/stashr/internal/config"
 	"github.com/harshalranjhani/stashr/internal/crypto"
+	"github.com/harshalranjhani/stashr/internal/database"
 	"github.com/harshalranjhani/stashr/internal/logger"
 	"github.com/harshalranjhani/stashr/internal/managers"
 	"github.com/harshalranjhani/stashr/internal/storage"
@@ -24,6 +26,8 @@ var (
 	fullExport       bool
 	interactiveMode  bool
 	dryRun           bool
+	backupTags       []string
+	backupNotes      string
 )
 
 // backupCmd represents the backup command
@@ -53,6 +57,8 @@ func init() {
 	backupCmd.Flags().BoolVar(&fullExport, "full-export", false, "Export full item details including passwords (slower, 1Password only)")
 	backupCmd.Flags().BoolVarP(&interactiveMode, "interactive", "i", false, "Interactive mode with guided prompts")
 	backupCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview backup operation without executing")
+	backupCmd.Flags().StringSliceVarP(&backupTags, "tag", "t", []string{}, "Tags to add to this backup (can be specified multiple times)")
+	backupCmd.Flags().StringVarP(&backupNotes, "note", "n", "", "Notes to add to this backup")
 }
 
 func runBackup(cmd *cobra.Command, args []string) {
@@ -256,6 +262,18 @@ func backupManager(mgr managers.Manager, storageBackends []storage.Storage, cfg 
 	var processedData []byte
 	if cfg.Backup.Compression {
 		logger.Progress("Compressing data...")
+
+		// Show progress bar for large data (> 5MB)
+		if originalSize > 5*1024*1024 {
+			bar := progressbar.NewOptions(originalSize,
+				progressbar.OptionSetDescription("Compressing"),
+				progressbar.OptionSetWidth(40),
+				progressbar.OptionShowBytes(true),
+				progressbar.OptionClearOnFinish(),
+			)
+			bar.Add(originalSize) // Compression is too fast to show real progress, so just complete it
+		}
+
 		compressedData, err := utils.CompressData(exportedData)
 		if err != nil {
 			return fmt.Errorf("compression failed: %w", err)
@@ -270,6 +288,18 @@ func backupManager(mgr managers.Manager, storageBackends []storage.Storage, cfg 
 	// Encrypt data if enabled
 	if !noEncrypt && cfg.Backup.Encryption.Enabled {
 		logger.Progress("Encrypting backup...")
+
+		// Show progress bar for large data (> 5MB)
+		if len(processedData) > 5*1024*1024 {
+			bar := progressbar.NewOptions(len(processedData),
+				progressbar.OptionSetDescription("Encrypting"),
+				progressbar.OptionSetWidth(40),
+				progressbar.OptionShowBytes(true),
+				progressbar.OptionClearOnFinish(),
+			)
+			bar.Add(len(processedData)) // Encryption is too fast to show real progress, so just complete it
+		}
+
 		encryptedData, err := crypto.Encrypt(processedData, password)
 		if err != nil {
 			return fmt.Errorf("encryption failed: %w", err)
@@ -294,16 +324,26 @@ func backupManager(mgr managers.Manager, storageBackends []storage.Storage, cfg 
 
 	// Upload to each storage backend
 	successCount := 0
+	var successfulStorage string
 	for _, backend := range storageBackends {
 		if err := uploadToBackend(backend, filename, processedData, cfg); err != nil {
 			logger.Warning("⚠ %s: %v", backend.Name(), err)
 		} else {
 			successCount++
+			if successfulStorage == "" {
+				successfulStorage = backend.Name()
+			}
 		}
 	}
 
 	if successCount == 0 {
 		return fmt.Errorf("failed to upload to any storage backend")
+	}
+
+	// Record backup in database
+	if err := database.RecordBackup(filename, mgr.Name(), successfulStorage, int64(finalSize), backupTags, backupNotes); err != nil {
+		logger.Warning("Failed to record backup in database: %v", err)
+		// Don't fail the backup if database recording fails
 	}
 
 	logger.Success("✅ Backup completed for %s (%s)", mgr.Name(), utils.FormatBytes(int64(finalSize)))
@@ -320,9 +360,27 @@ func uploadToBackend(backend storage.Storage, filename string, data []byte, cfg 
 		return fmt.Errorf("storage not available")
 	}
 
-	// Upload
+	// Upload with progress bar
 	logger.Progress("Uploading to %s...", backend.Name())
 	startTime := time.Now()
+
+	// Show progress bar for large uploads (> 1MB)
+	if len(data) > 1024*1024 {
+		bar := progressbar.NewOptions(len(data),
+			progressbar.OptionSetDescription(fmt.Sprintf("Uploading to %s", backend.Name())),
+			progressbar.OptionSetWidth(40),
+			progressbar.OptionShowBytes(true),
+			progressbar.OptionSetTheme(progressbar.Theme{
+				Saucer:        "=",
+				SaucerHead:    ">",
+				SaucerPadding: " ",
+				BarStart:      "[",
+				BarEnd:        "]",
+			}),
+			progressbar.OptionClearOnFinish(),
+		)
+		bar.Add(len(data))
+	}
 
 	if err := backend.Upload(filename, data); err != nil {
 		return err

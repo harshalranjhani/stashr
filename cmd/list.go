@@ -3,17 +3,23 @@ package cmd
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/harshalranjhani/stashr/internal/config"
+	"github.com/harshalranjhani/stashr/internal/database"
 	"github.com/harshalranjhani/stashr/internal/logger"
 	"github.com/harshalranjhani/stashr/internal/storage"
 	"github.com/harshalranjhani/stashr/pkg/utils"
 )
 
-var listDestination string
+var (
+	listDestination string
+	listTags        []string
+	listShowTags    bool
+)
 
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -29,6 +35,8 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().StringVarP(&listDestination, "destination", "d", "all", "Destination to list from (gdrive, usb, local, all)")
+	listCmd.Flags().StringSliceVarP(&listTags, "tag", "t", []string{}, "Filter by tags (can specify multiple)")
+	listCmd.Flags().BoolVar(&listShowTags, "show-tags", true, "Show tags in output (default: true)")
 }
 
 func runList(cmd *cobra.Command, args []string) {
@@ -101,20 +109,62 @@ func runList(cmd *cobra.Command, args []string) {
 		})
 
 		// Display backups in table format
-		fmt.Printf("%-50s %-20s %-12s %-20s\n", "Name", "Modified", "Size", "Age")
-		fmt.Println(string(make([]rune, 102)))
+		if listShowTags {
+			fmt.Printf("%-45s %-20s %-12s %-15s %-20s\n", "Name", "Modified", "Size", "Age", "Tags")
+			fmt.Println(string(make([]rune, 112)))
+		} else {
+			fmt.Printf("%-50s %-20s %-12s %-20s\n", "Name", "Modified", "Size", "Age")
+			fmt.Println(string(make([]rune, 102)))
+		}
 
 		for _, backup := range backups {
+			// Get tags from database
+			backupRecord, _ := database.GetBackup(backup.Name)
+			var backupTags []string
+			if backupRecord != nil {
+				backupTags = backupRecord.Tags
+			}
+
+			// Filter by tags if specified
+			if len(listTags) > 0 {
+				hasTag := false
+				for _, filterTag := range listTags {
+					for _, backupTag := range backupTags {
+						if backupTag == filterTag {
+							hasTag = true
+							break
+						}
+					}
+					if hasTag {
+						break
+					}
+				}
+				if !hasTag {
+					continue
+				}
+			}
+
 			age := formatAge(time.Since(backup.ModifiedTime))
 			modTime := backup.ModifiedTime.Format("2006-01-02 15:04:05")
 			size := utils.FormatBytes(backup.Size)
 
-			fmt.Printf("%-50s %-20s %-12s %-20s\n",
-				truncate(backup.Name, 50),
-				modTime,
-				size,
-				age,
-			)
+			if listShowTags {
+				tagsStr := formatTags(backupTags)
+				fmt.Printf("%-45s %-20s %-12s %-15s %-20s\n",
+					truncate(backup.Name, 45),
+					modTime,
+					size,
+					age,
+					tagsStr,
+				)
+			} else {
+				fmt.Printf("%-50s %-20s %-12s %-20s\n",
+					truncate(backup.Name, 50),
+					modTime,
+					size,
+					age,
+				)
+			}
 		}
 	}
 
@@ -204,4 +254,11 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+func formatTags(tags []string) string {
+	if len(tags) == 0 {
+		return "-"
+	}
+	return strings.Join(tags, ", ")
 }
