@@ -167,6 +167,11 @@ func (u *USB) List() ([]BackupFile, error) {
 			continue
 		}
 
+		// Skip hidden/system files (e.g., ._ files, .DS_Store)
+		if shouldIgnoreFile(entry.Name()) {
+			continue
+		}
+
 		info, err := entry.Info()
 		if err != nil {
 			continue

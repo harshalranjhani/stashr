@@ -286,6 +286,11 @@ func (g *GoogleDrive) List() ([]BackupFile, error) {
 
 	var backups []BackupFile
 	for _, file := range fileList.Files {
+		// Skip hidden/system files (e.g., ._ files, .DS_Store)
+		if shouldIgnoreFile(file.Name) {
+			continue
+		}
+
 		modTime, _ := time.Parse(time.RFC3339, file.ModifiedTime)
 		backups = append(backups, BackupFile{
 			Name:         file.Name,

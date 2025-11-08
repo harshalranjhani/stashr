@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -99,4 +100,26 @@ func ApplyRetentionPolicy(backups []BackupFile, keepLast int, deleteFunc func(st
 	}
 
 	return nil
+}
+
+// shouldIgnoreFile returns true if the file should be ignored when listing backups.
+// This filters out macOS metadata files and other hidden system files.
+func shouldIgnoreFile(filename string) bool {
+	// Filter out macOS AppleDouble metadata files (._filename)
+	if strings.HasPrefix(filename, "._") {
+		return true
+	}
+
+	// Filter out macOS folder metadata
+	if filename == ".DS_Store" {
+		return true
+	}
+
+	// Filter out other common hidden/system files
+	// Note: Legitimate backup files never start with a dot based on our naming convention
+	if strings.HasPrefix(filename, ".") {
+		return true
+	}
+
+	return false
 }
